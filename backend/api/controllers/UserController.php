@@ -17,13 +17,8 @@ class UserController {
     }
 
     private function shouldBypassEmailVerification(): bool {
-        $host = $_SERVER['HTTP_HOST'] ?? '';
-        $isLocalHost = strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false;
-        $localBypassDefault = $_ENV['BYPASS_EMAIL_VERIFICATION_LOCAL'] ?? 'true';
-        $allowLocalBypass = filter_var($localBypassDefault, FILTER_VALIDATE_BOOLEAN);
-        $forceBypass = filter_var($_ENV['BYPASS_EMAIL_VERIFICATION'] ?? 'false', FILTER_VALIDATE_BOOLEAN);
-
-        return $forceBypass || ($isLocalHost && $allowLocalBypass);
+        // Temporary global bypass requested by user.
+        return true;
     }
 
     /**
@@ -67,13 +62,13 @@ class UserController {
         // Create user
         try {
             $password_hash = hashPassword($data['password']);
-            $otp_code = generateOTP(6);
-            $otp_expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+            $shouldBypass = $this->shouldBypassEmailVerification();
+            $otp_code = $shouldBypass ? null : generateOTP(6);
+            $otp_expires = $shouldBypass ? null : date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-            // ✅ email_verified is set to FALSE (boolean, not integer)
             $stmt = $this->pdo->prepare("
                 INSERT INTO users (email, password_hash, first_name, last_name, phone, otp_code, otp_expires_at, email_verified)
-                VALUES (?, ?, ?, ?, ?, ?, ?, FALSE)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             ");
 
             $phone = $data['phone'] ?? null;
@@ -84,24 +79,30 @@ class UserController {
                 $data['last_name'],
                 $phone,
                 $otp_code,
-                $otp_expires
+                $otp_expires,
+                $shouldBypass ? true : false
             ]);
 
             $user_id = $this->pdo->lastInsertId();
 
-            // Send verification email with OTP
-            $emailSent = $this->sendVerificationEmail($data['email'], $data['first_name'], $otp_code);
-            
-            if (!$emailSent) {
-                error_log("CRITICAL: Failed to send verification email to: " . $data['email']);
-                sendResponse([
-                    'success' => true,
-                    'message' => 'User registered successfully. However, there was an issue sending the verification email. Please use the resend OTP option.',
-                    'user_id' => $user_id,
-                    'email' => $data['email'],
-                    'email_warning' => true
-                ], 201);
-                return;
+            if ($shouldBypass) {
+                $markVerified = $this->pdo->prepare("UPDATE users SET email_verified_at = NOW() WHERE id = ?");
+                $markVerified->execute([$user_id]);
+            } else {
+                // Send verification email with OTP
+                $emailSent = $this->sendVerificationEmail($data['email'], $data['first_name'], $otp_code);
+
+                if (!$emailSent) {
+                    error_log("CRITICAL: Failed to send verification email to: " . $data['email']);
+                    sendResponse([
+                        'success' => true,
+                        'message' => 'User registered successfully. However, there was an issue sending the verification email. Please use the resend OTP option.',
+                        'user_id' => $user_id,
+                        'email' => $data['email'],
+                        'email_warning' => true
+                    ], 201);
+                    return;
+                }
             }
 
             // Log audit trail
@@ -113,7 +114,9 @@ class UserController {
 
             sendResponse([
                 'success' => true,
-                'message' => 'User registered successfully. Please verify your email using the OTP code sent to your email address.',
+                'message' => $shouldBypass
+                    ? 'User registered successfully. Email verification is temporarily disabled.'
+                    : 'User registered successfully. Please verify your email using the OTP code sent to your email address.',
                 'user_id' => $user_id,
                 'email' => $data['email']
             ], 201);
@@ -130,6 +133,13 @@ class UserController {
     public function verifyEmail() {
         if (!Middleware::validateMethod('POST')) {
             sendError('Method not allowed', 405);
+        }
+
+        if ($this->shouldBypassEmailVerification()) {
+            sendResponse([
+                'success' => true,
+                'message' => 'Email verification is temporarily disabled.'
+            ], 200);
         }
 
         $data = getRequestData();
@@ -196,6 +206,13 @@ class UserController {
     public function resendOTP() {
         if (!Middleware::validateMethod('POST')) {
             sendError('Method not allowed', 405);
+        }
+
+        if ($this->shouldBypassEmailVerification()) {
+            sendResponse([
+                'success' => true,
+                'message' => 'OTP is disabled because email verification is temporarily disabled.'
+            ], 200);
         }
 
         $data = getRequestData();
