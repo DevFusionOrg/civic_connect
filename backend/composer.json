@@ -1,0 +1,16 @@
+{
+    "name": "civic_connect/backend",
+    "type": "project",
+    "require": {
+        "phpmailer/phpmailer": "^6.9",
+        "vlucas/phpdotenv": "^5.6"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "EbadShelby",
+            "email": "ebadyasser123xd@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable"
+}

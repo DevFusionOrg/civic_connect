@@ -1,0 +1,56 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+.DS_Store
+dist
+dist-ssr
+coverage
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+*.tsbuildinfo
+
+.eslintcache
+
+# Cypress
+/cypress/videos/
+/cypress/screenshots/
+
+# Vitest
+__screenshots__/
+
+
+
+# Main Block
+#gitignore for cline rules
+.clinerules
+.github
+backend/vendor/
+backend/uploads/*
+backend/.env
+
+# Test and debug files
+test_*.php
+test_*.sh
+*_test.php
+send_otp_now.php
+
+# Migration scripts (use migrations directory instead)
+migrate_*.php
+*_migration.sql

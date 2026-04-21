@@ -1,0 +1,10 @@
+# Enable URL rewriting
+RewriteEngine On
+RewriteBase /civic-connect/backend/api/
+
+# Skip rewriting for real files and directories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# Rewrite all requests to index.php with the route as a query parameter  
+RewriteRule ^(.*)$ index.php?route=$1 [QSA,L]
