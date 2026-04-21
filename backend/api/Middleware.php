@@ -169,40 +169,6 @@ class Middleware {
      * CORS headers for cross-origin requests – SIMPLIFIED & BULLETPROOF
      */
     public static function setCORSHeaders() {
-        // Explicitly define allowed origins (add your production frontend URL)
-        $allowed_origins = [
-            'https://civic-connect-topaz-five.vercel.app',   // Your Vercel frontend
-            'http://localhost:5173',                         // Local Vue dev server
-            'http://localhost:5174',
-            'http://localhost:5175',
-            'http://localhost:3000',
-            'http://127.0.0.1:5173',
-            'http://127.0.0.1:3000'
-        ];
-
-        // Also respect environment variable if set (optional)
-        $envOrigins = $_ENV['CORS_ALLOWED_ORIGINS'] ?? '';
-        if (!empty($envOrigins)) {
-            $extra = array_map('trim', explode(',', $envOrigins));
-            foreach ($extra as $origin) {
-                if (!empty($origin)) {
-                    $allowed_origins[] = $origin;
-                }
-            }
-        }
-
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-        if (in_array($origin, $allowed_origins)) {
-            header('Access-Control-Allow-Origin: ' . $origin);
-            header('Vary: Origin');
-            header('Access-Control-Allow-Credentials: true');
-        }
-
-        header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
-        header('Access-Control-Max-Age: 3600');
-
-        // Handle preflight OPTIONS request immediately
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
             http_response_code(204);
             exit;
