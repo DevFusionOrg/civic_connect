@@ -1,0 +1,15 @@
+.clinerules
+.github
+backend/vendor/
+backend/uploads/*
+backend/.env
+
+# Test and debug files
+test_*.php
+test_*.sh
+*_test.php
+send_otp_now.php
+
+# Migration scripts (use migrations directory instead)
+migrate_*.php
+*_migration.sql
