@@ -1,6 +1,6 @@
 # Enable URL rewriting
 RewriteEngine On
-RewriteBase /civic-connect/backend/api/
+RewriteBase /
 
 # Skip rewriting for real files and directories
 RewriteCond %{REQUEST_FILENAME} !-f
