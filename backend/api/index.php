@@ -78,6 +78,9 @@ if (isset($_GET['route']) && !empty($_GET['route'])) {
     } else {
         $request_uri = $full_uri;
     }
+
+    // Also support deployment from the service root or /api prefix
+    $request_uri = preg_replace('#^/api#', '', $request_uri);
     
     // Remove index.php if it's in the path (for DirectoryIndex scenario)
     $request_uri = str_replace('/index.php', '', $request_uri);

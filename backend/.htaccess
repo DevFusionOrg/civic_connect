@@ -1,10 +1,10 @@
 RewriteEngine On
-RewriteBase /civic-connect/backend/api/
+RewriteBase /
 
 # If request is for a real file or directory, pass it through
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Rewrite all other requests to index.php with the route parameter
-RewriteRule ^(.*)$ api/index.php?route=$1 [QSA,L]
+# Rewrite all other requests to the API router and strip an optional api/ prefix
+RewriteRule ^(api/)?(.*)$ api/index.php?route=$2 [QSA,L]
