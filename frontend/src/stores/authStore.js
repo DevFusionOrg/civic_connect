@@ -2,7 +2,11 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost/civic-connect/backend/api'
+const DEFAULT_LOCAL_API_URL = 'http://localhost/civic-connect/backend/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL?.trim()
+  || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? DEFAULT_LOCAL_API_URL
+    : `${window.location.origin}/api`)
 const AUTH_BASE_URL = `${API_BASE_URL}/auth`
 const USERS_BASE_URL = `${API_BASE_URL}/users`
 
@@ -79,7 +83,7 @@ export const useAuthStore = defineStore('auth', () => {
         const requestUrl = err?.config?.url || ''
 
         // If a protected API request returns 401, clear stale session state.
-        if (status === 401 && requestUrl.includes('/backend/api/')) {
+        if (status === 401 && requestUrl.includes('/api/')) {
           clearAuthState()
         }
 
