@@ -70,6 +70,7 @@ class UserController {
             $otp_code = generateOTP(6);
             $otp_expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
+            // ✅ email_verified is set to FALSE (boolean, not integer)
             $stmt = $this->pdo->prepare("
                 INSERT INTO users (email, password_hash, first_name, last_name, phone, otp_code, otp_expires_at, email_verified)
                 VALUES (?, ?, ?, ?, ?, ?, ?, FALSE)
@@ -92,9 +93,7 @@ class UserController {
             $emailSent = $this->sendVerificationEmail($data['email'], $data['first_name'], $otp_code);
             
             if (!$emailSent) {
-                // Email sending failed - log  and inform user
                 error_log("CRITICAL: Failed to send verification email to: " . $data['email']);
-                // Still allow registration to complete, but warn user
                 sendResponse([
                     'success' => true,
                     'message' => 'User registered successfully. However, there was an issue sending the verification email. Please use the resend OTP option.',
@@ -135,7 +134,6 @@ class UserController {
 
         $data = getRequestData();
 
-        // Validate required fields
         if (!Middleware::validateRequired($data, ['email', 'otp_code'])) {
             sendError('Email and OTP code required', 400);
         }
@@ -153,35 +151,25 @@ class UserController {
                 sendError('User not found', 404);
             }
 
-            // Check if already verified
             if ($user['email_verified']) {
                 sendError('Email already verified', 400);
             }
 
-            // Check OTP attempts
             if ($user['otp_attempts'] >= 5) {
                 sendError('Maximum OTP attempts exceeded. Please request a new OTP.', 429);
             }
 
-            // Check OTP expiration
             if (strtotime($user['otp_expires_at']) < time()) {
                 sendError('OTP code has expired', 400);
             }
 
-            // Verify OTP
             if ($user['otp_code'] !== $data['otp_code']) {
-                // Increment attempts
-                $stmt = $this->pdo->prepare("
-                    UPDATE users
-                    SET otp_attempts = otp_attempts + 1
-                    WHERE id = ?
-                ");
+                $stmt = $this->pdo->prepare("UPDATE users SET otp_attempts = otp_attempts + 1 WHERE id = ?");
                 $stmt->execute([$user['id']]);
-
                 sendError('Invalid OTP code', 400);
             }
 
-            // Update user - mark as verified
+            // ✅ Use TRUE boolean
             $stmt = $this->pdo->prepare("
                 UPDATE users
                 SET email_verified = TRUE, email_verified_at = NOW(), otp_code = NULL, otp_expires_at = NULL, otp_attempts = 0
@@ -189,7 +177,6 @@ class UserController {
             ");
             $stmt->execute([$user['id']]);
 
-            // Log audit trail
             Middleware::logAuditTrail($user['id'], 'EMAIL_VERIFIED', 'users', $user['id']);
 
             sendResponse([
@@ -218,11 +205,7 @@ class UserController {
         }
 
         try {
-            $stmt = $this->pdo->prepare("
-                SELECT id, first_name, email_verified
-                FROM users
-                WHERE email = ?
-            ");
+            $stmt = $this->pdo->prepare("SELECT id, first_name, email_verified FROM users WHERE email = ?");
             $stmt->execute([$data['email']]);
             $user = $stmt->fetch();
 
@@ -234,18 +217,12 @@ class UserController {
                 sendError('Email is already verified', 400);
             }
 
-            // Generate new OTP
             $otp_code = generateOTP(6);
             $otp_expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-            $stmt = $this->pdo->prepare("
-                UPDATE users
-                SET otp_code = ?, otp_expires_at = ?, otp_attempts = 0
-                WHERE id = ?
-            ");
+            $stmt = $this->pdo->prepare("UPDATE users SET otp_code = ?, otp_expires_at = ?, otp_attempts = 0 WHERE id = ?");
             $stmt->execute([$otp_code, $otp_expires, $user['id']]);
 
-            // Send verification email
             $emailSent = $this->sendVerificationEmail($data['email'], $user['first_name'], $otp_code);
             
             if (!$emailSent) {
@@ -253,7 +230,6 @@ class UserController {
                 sendError('Failed to send OTP email. Please try again later.', 500);
             }
 
-            // Log audit trail
             Middleware::logAuditTrail($user['id'], 'OTP_RESENT', 'users', $user['id']);
 
             sendResponse([
@@ -277,12 +253,10 @@ class UserController {
 
         $data = getRequestData();
 
-        // Validate required fields
         if (!Middleware::validateRequired($data, ['email', 'password'])) {
             sendError('Email and password required', 400);
         }
 
-        // Rate limiting
         if (!Middleware::rateLimit($data['email'], 5, 300)) {
             sendError('Too many login attempts. Please try again later.', 429);
         }
@@ -296,7 +270,6 @@ class UserController {
             $stmt->execute([$data['email']]);
             $user = $stmt->fetch();
             
-            // Update last_login
             if ($user) {
                 $updateLogin = $this->pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
                 $updateLogin->execute([$user['id']]);
@@ -318,15 +291,12 @@ class UserController {
                 error_log('Email verification bypassed for local/dev login: ' . $user['email']);
             }
 
-            // Verify password
             if (!verifyPassword($data['password'], $user['password_hash'])) {
                 sendError('Invalid email or password', 401);
             }
 
-            // Generate token
             $token = bin2hex(random_bytes(32));
 
-            // Store session
             if (session_status() === PHP_SESSION_NONE) {
                 session_start();
             }
@@ -334,16 +304,15 @@ class UserController {
             $_SESSION['email'] = $user['email'];
             $_SESSION['token'] = $token;
 
-            // Log audit trail
             Middleware::logAuditTrail($user['id'], 'USER_LOGIN', 'users', $user['id']);
 
+            // ✅ Removed duplicate 'first_name' key
             sendResponse([
                 'success' => true,
                 'message' => 'Login successful',
                 'user' => [
                     'id' => $user['id'],
                     'email' => $user['email'],
-                    'first_name' => $user['first_name'],
                     'first_name' => $user['first_name'],
                     'last_name' => $user['last_name'],
                     'role' => $user['role']
@@ -366,7 +335,6 @@ class UserController {
 
         $user = Middleware::requireAuth();
 
-        // Log audit trail
         Middleware::logAuditTrail($user['user_id'], 'USER_LOGOUT', 'users', $user['user_id']);
 
         if (session_status() === PHP_SESSION_NONE) {
@@ -422,14 +390,12 @@ class UserController {
 
         $auth_user = Middleware::requireAuth();
 
-        // Check if user owns this profile
         if (!Middleware::ownsResource($auth_user['user_id'], $user_id)) {
             sendError('Unauthorized: Cannot update other user profiles', 403);
         }
 
         $data = getRequestData();
 
-        // Allowed fields for update
         $allowed_fields = ['first_name', 'last_name', 'phone', 'location'];
         $update_fields = [];
         $update_values = [];
@@ -448,14 +414,9 @@ class UserController {
         $update_values[] = $user_id;
 
         try {
-            $stmt = $this->pdo->prepare("
-                UPDATE users
-                SET " . implode(', ', $update_fields) . "
-                WHERE id = ?
-            ");
+            $stmt = $this->pdo->prepare("UPDATE users SET " . implode(', ', $update_fields) . " WHERE id = ?");
             $stmt->execute($update_values);
 
-            // Fetch the updated user data
             $stmt = $this->pdo->prepare("
                 SELECT id, email, first_name, last_name, phone, location, role, created_at
                 FROM users
@@ -464,7 +425,6 @@ class UserController {
             $stmt->execute([$user_id]);
             $updated_user = $stmt->fetch();
 
-            // Log audit trail
             Middleware::logAuditTrail($user_id, 'USER_UPDATED', 'users', $user_id, null, $data);
 
             sendResponse([
@@ -498,7 +458,6 @@ class UserController {
             
             return $result;
         } catch (Exception $e) {
-            // Log detailed error information
             error_log('Email sending failed: ' . $e->getMessage());
             if ($mail !== null) {
                 error_log('Mail Error Info: ' . $mail->ErrorInfo);
@@ -546,22 +505,16 @@ class UserController {
             sendError('Email is required', 400);
         }
 
-        // Validate email format
         if (!isValidEmail($data['email'])) {
             sendError('Invalid email format', 400);
         }
 
         try {
-            $stmt = $this->pdo->prepare("
-                SELECT id, first_name, email_verified, is_active
-                FROM users
-                WHERE email = ?
-            ");
+            $stmt = $this->pdo->prepare("SELECT id, first_name, email_verified, is_active FROM users WHERE email = ?");
             $stmt->execute([$data['email']]);
             $user = $stmt->fetch();
 
             if (!$user) {
-                // For security, don't reveal if email exists
                 sendResponse([
                     'success' => true,
                     'message' => 'If this email is registered, a reset code has been sent'
@@ -577,18 +530,12 @@ class UserController {
                 sendError('Please verify your email address first', 403);
             }
 
-            // Generate reset code
             $reset_code = generateOTP(6);
             $reset_expires = date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-            $stmt = $this->pdo->prepare("
-                UPDATE users
-                SET otp_code = ?, otp_expires_at = ?, otp_attempts = 0
-                WHERE id = ?
-            ");
+            $stmt = $this->pdo->prepare("UPDATE users SET otp_code = ?, otp_expires_at = ?, otp_attempts = 0 WHERE id = ?");
             $stmt->execute([$reset_code, $reset_expires, $user['id']]);
 
-            // Send password reset email
             $emailSent = $this->sendPasswordResetEmail($data['email'], $user['first_name'], $reset_code);
             
             if (!$emailSent) {
@@ -596,7 +543,6 @@ class UserController {
                 sendError('Failed to send reset code. Please try again later.', 500);
             }
 
-            // Log audit trail
             Middleware::logAuditTrail($user['id'], 'PASSWORD_RESET_REQUESTED', 'users', $user['id']);
 
             sendResponse([
@@ -620,7 +566,6 @@ class UserController {
 
         $data = getRequestData();
 
-        // Validate required fields
         if (!Middleware::validateRequired($data, ['email', 'reset_code'])) {
             sendError('Email and reset code required', 400);
         }
@@ -646,26 +591,17 @@ class UserController {
                 sendError('Please verify your email address first', 403);
             }
 
-            // Check OTP attempts
             if ($user['otp_attempts'] >= 5) {
                 sendError('Maximum attempts exceeded. Please request a new reset code.', 429);
             }
 
-            // Check OTP expiration
             if (strtotime($user['otp_expires_at']) < time()) {
                 sendError('Reset code has expired', 400);
             }
 
-            // Verify OTP
             if ($user['otp_code'] !== $data['reset_code']) {
-                // Increment attempts
-                $stmt = $this->pdo->prepare("
-                    UPDATE users
-                    SET otp_attempts = otp_attempts + 1
-                    WHERE id = ?
-                ");
+                $stmt = $this->pdo->prepare("UPDATE users SET otp_attempts = otp_attempts + 1 WHERE id = ?");
                 $stmt->execute([$user['id']]);
-
                 sendError('Invalid reset code', 400);
             }
 
@@ -689,12 +625,10 @@ class UserController {
 
         $data = getRequestData();
 
-        // Validate required fields
         if (!Middleware::validateRequired($data, ['email', 'reset_code', 'new_password'])) {
             sendError('Email, reset code, and new password required', 400);
         }
 
-        // Validate password strength
         if (strlen($data['new_password']) < 8) {
             sendError('Password must be at least 8 characters long', 400);
         }
@@ -732,30 +666,20 @@ class UserController {
                 sendError('Please verify your email address first', 403);
             }
 
-            // Check OTP attempts
             if ($user['otp_attempts'] >= 5) {
                 sendError('Maximum attempts exceeded. Please request a new reset code.', 429);
             }
 
-            // Check OTP expiration
             if (strtotime($user['otp_expires_at']) < time()) {
                 sendError('Reset code has expired', 400);
             }
 
-            // Verify reset code one more time
             if ($user['otp_code'] !== $data['reset_code']) {
-                // Increment attempts
-                $stmt = $this->pdo->prepare("
-                    UPDATE users
-                    SET otp_attempts = otp_attempts + 1
-                    WHERE id = ?
-                ");
+                $stmt = $this->pdo->prepare("UPDATE users SET otp_attempts = otp_attempts + 1 WHERE id = ?");
                 $stmt->execute([$user['id']]);
-
                 sendError('Invalid reset code', 400);
             }
 
-            // Update password and clear reset code
             $password_hash = hashPassword($data['new_password']);
             
             $stmt = $this->pdo->prepare("
@@ -765,10 +689,8 @@ class UserController {
             ");
             $stmt->execute([$password_hash, $user['id']]);
 
-            // Send confirmation email
             $this->sendPasswordChangedEmail($data['email'], $user['first_name']);
 
-            // Log audit trail
             Middleware::logAuditTrail($user['id'], 'PASSWORD_RESET_COMPLETED', 'users', $user['id']);
 
             sendResponse([
@@ -884,24 +806,13 @@ class UserController {
 
         $auth_user = Middleware::requireAuth();
 
-        // Check if user can access these stats (own profile or admin/staff)
-        // Removed restriction to allow viewing other users' stats
-        // if (!Middleware::ownsResource($auth_user['user_id'], $user_id) && !in_array($auth_user['role'], ['admin', 'staff'])) {
-        //    sendError('Unauthorized: Cannot view other user stats', 403);
-        // }
-
+        // Allow any authenticated user to view stats (no ownership restriction)
         try {
-            // Get total issues reported by the user
-            $stmt = $this->pdo->prepare("
-                SELECT COUNT(*) as total_issues
-                FROM issues
-                WHERE user_id = ?
-            ");
+            $stmt = $this->pdo->prepare("SELECT COUNT(*) as total_issues FROM issues WHERE user_id = ?");
             $stmt->execute([$user_id]);
             $issues_result = $stmt->fetch();
             $total_issues = $issues_result['total_issues'] ?? 0;
 
-            // Get total upvotes received on user's issues
             $stmt = $this->pdo->prepare("
                 SELECT COUNT(u.id) as total_upvotes
                 FROM upvotes u
