@@ -268,7 +268,7 @@ const handleRegister = async () => {
     errors.value.email ||
     errors.value.password ||
     errors.value.confirmPassword ||
-    errors.value.terms ||
+    errors.value.terms
   ) {
     return
   }
