@@ -7,9 +7,33 @@ require_once __DIR__ . '/../config/database.php';
 
 class Middleware {
     /**
+     * Normalize origin strings for reliable comparisons.
+     */
+    private static function normalizeOrigin($origin) {
+        if (!is_string($origin)) {
+            return '';
+        }
+
+        $normalized = trim($origin);
+        if ($normalized === '') {
+            return '';
+        }
+
+        // Browsers send origins without trailing slash; normalize env values to match.
+        return rtrim($normalized, '/');
+    }
+
+    /**
      * Check whether an origin matches an allowlist pattern.
      */
     private static function originMatchesPattern($origin, $pattern) {
+        $origin = self::normalizeOrigin($origin);
+        $pattern = self::normalizeOrigin($pattern);
+
+        if ($origin === '' || $pattern === '') {
+            return false;
+        }
+
         if ($origin === $pattern) {
             return true;
         }
@@ -145,7 +169,7 @@ class Middleware {
      * CORS headers for cross-origin requests
      */
     public static function setCORSHeaders() {
-        $configuredOrigins = array_filter(array_map('trim', explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? '')));
+        $configuredOrigins = array_filter(array_map([self::class, 'normalizeOrigin'], explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? '')));
         $defaultOrigins = [
             $_ENV['FRONTEND_URL'] ?? '',
             $_ENV['APP_URL'] ?? '',
@@ -159,9 +183,9 @@ class Middleware {
             'http://127.0.0.1:5174',
             'http://127.0.0.1:3000',
         ];
-        $allowed_origins = array_values(array_unique(array_filter(array_merge($configuredOrigins, $defaultOrigins))));
+        $allowed_origins = array_values(array_unique(array_filter(array_map([self::class, 'normalizeOrigin'], array_merge($configuredOrigins, $defaultOrigins)))));
         
-        $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $origin = self::normalizeOrigin($_SERVER['HTTP_ORIGIN'] ?? '');
         $matchedOrigin = '';
         
         foreach ($allowed_origins as $allowedOrigin) {
@@ -174,7 +198,7 @@ class Middleware {
         if ($matchedOrigin !== '') {
             header('Access-Control-Allow-Origin: ' . $matchedOrigin);
             header('Vary: Origin');
-        } elseif (!empty($allowed_origins)) {
+        } elseif ($origin === '' && !empty($allowed_origins)) {
             // Set deterministic fallback for non-browser/server requests.
             header('Access-Control-Allow-Origin: ' . $allowed_origins[0]);
         }
