@@ -72,7 +72,7 @@ class UserController {
 
             $stmt = $this->pdo->prepare("
                 INSERT INTO users (email, password_hash, first_name, last_name, phone, otp_code, otp_expires_at, email_verified)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 0)
+                VALUES (?, ?, ?, ?, ?, ?, ?, FALSE)
             ");
 
             $phone = $data['phone'] ?? null;
@@ -184,7 +184,7 @@ class UserController {
             // Update user - mark as verified
             $stmt = $this->pdo->prepare("
                 UPDATE users
-                SET email_verified = 1, email_verified_at = NOW(), otp_code = NULL, otp_expires_at = NULL, otp_attempts = 0
+                SET email_verified = TRUE, email_verified_at = NOW(), otp_code = NULL, otp_expires_at = NULL, otp_attempts = 0
                 WHERE id = ?
             ");
             $stmt->execute([$user['id']]);
