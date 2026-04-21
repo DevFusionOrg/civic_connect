@@ -83,6 +83,16 @@ if (isset($_GET['route']) && !empty($_GET['route'])) {
     $request_uri = str_replace('/index.php', '', $request_uri);
 }
 
+// Simple health check for Railway and other platforms
+if ($request_uri === '' || $request_uri === 'health') {
+    http_response_code(200);
+    echo json_encode([
+        'status' => 'ok',
+        'service' => 'civic-connect-backend'
+    ]);
+    exit;
+}
+
 $request_method = $_SERVER['REQUEST_METHOD'];
 
 // Route the request

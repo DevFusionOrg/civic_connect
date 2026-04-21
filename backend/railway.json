@@ -12,7 +12,7 @@
   },
   "deploy": {
     "startCommand": "apache2-foreground",
-    "healthcheckPath": "/",
+    "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3
   }
