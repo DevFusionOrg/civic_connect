@@ -136,6 +136,7 @@ export const useAuthStore = defineStore('auth', () => {
         message: response.data.message,
         userId: response.data.user_id,
         email: response.data.email,
+        verificationRequired: response.data.verification_required !== false,
       }
     } catch (err) {
       logApiError('register', err)

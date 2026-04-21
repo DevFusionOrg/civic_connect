@@ -331,12 +331,17 @@ const handleRegister = async () => {
     })
 
     if (response.success) {
-      toast.success('Account created! Please verify your email.')
+      if (response.verificationRequired) {
+        toast.success('Account created! Please verify your email.')
 
-      // Store email for verification page
-      sessionStorage.setItem('registeredEmail', response.email)
+        // Store email for verification page
+        sessionStorage.setItem('registeredEmail', response.email)
 
-      router.push('/verify-email')
+        router.push('/verify-email')
+      } else {
+        toast.success('Account created! You can now login.')
+        router.push('/login')
+      }
     }
   } catch (err) {
     error.value = err || 'Registration failed. Please try again.'

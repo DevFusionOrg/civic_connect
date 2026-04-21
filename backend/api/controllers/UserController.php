@@ -118,7 +118,8 @@ class UserController {
                     ? 'User registered successfully. Email verification is temporarily disabled.'
                     : 'User registered successfully. Please verify your email using the OTP code sent to your email address.',
                 'user_id' => $user_id,
-                'email' => $data['email']
+                'email' => $data['email'],
+                'verification_required' => !$shouldBypass
             ], 201);
 
         } catch (PDOException $e) {
