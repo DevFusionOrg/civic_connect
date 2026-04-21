@@ -1,4 +1,8 @@
 <?php
-// Redirect root requests to API health for Render service URL checks.
-header('Location: /api/health', true, 302);
-exit;
+// Simple root redirect or API info
+header('Content-Type: application/json');
+echo json_encode([
+    'service' => 'Civic Connect API',
+    'status' => 'running',
+    'docs' => 'See /api/ for endpoints'
+]);

@@ -11,10 +11,10 @@ class GeminiService {
     
     public function __construct() {
         $this->apiKey = $_ENV['GEMINI_API_KEY'] ?? '';
-        $this->model = $_ENV['GEMINI_MODEL'] ?? 'gemini-2.5-flash';
+        $this->model = $_ENV['GEMINI_MODEL'] ?? 'gemini-pro';
         
         if (empty($this->apiKey)) {
-            throw new Exception('Gemini API key not configured');
+            throw new Exception('Gemini API key not configured. Please set GEMINI_API_KEY in .env file. Get one from: https://makersuite.google.com/app/apikey');
         }
     }
     
@@ -148,6 +148,29 @@ class GeminiService {
 - Only provide essential information
 - DO NOT use markdown formatting (no **, *, _, etc.)
 - Use symbols and bullet points for formatting
+
+**Specific Answers for Common Questions:**
+
+When asked \"How do I track my reports?\": 
+- Direct them to the \"My Issues\" page in their account dashboard
+- Explain they can see all issues they've reported with current status
+- Mention they'll receive notifications when status changes
+- Tell them they can view issue details including comments and upvotes
+
+When asked \"How do I report an issue?\": 
+- Send them to the \"Report Issue\" button
+- List required info: title, description, category, location (optional photo)
+- Remind them to be clear and specific
+
+When asked about statuses: 
+- Pending Review: Issue submitted and waiting for review
+- In Progress: City officials are working on it
+- Resolved: Issue has been fixed
+
+When asked about upvoting: 
+- Other users can upvote to show support
+- Higher upvotes increase visibility and priority
+- Users can only upvote once per issue
 
 **Common Questions:**
 - How do I report an issue?
