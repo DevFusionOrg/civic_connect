@@ -66,24 +66,48 @@ class UserController {
             $otp_code = $shouldBypass ? null : generateOTP(6);
             $otp_expires = $shouldBypass ? null : date('Y-m-d H:i:s', strtotime('+10 minutes'));
 
-            $stmt = $this->pdo->prepare("
-                INSERT INTO users (email, password_hash, first_name, last_name, phone, otp_code, otp_expires_at, email_verified)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ");
+                $phone = $data['phone'] ?? null;
+                $driver = strtolower($this->pdo->getAttribute(PDO::ATTR_DRIVER_NAME));
 
-            $phone = $data['phone'] ?? null;
-            $stmt->execute([
-                $data['email'],
-                $password_hash,
-                $data['first_name'],
-                $data['last_name'],
-                $phone,
-                $otp_code,
-                $otp_expires,
-                $shouldBypass ? true : false
-            ]);
+                if ($driver === 'pgsql') {
+                    $stmt = $this->pdo->prepare("
+                        INSERT INTO users (email, password_hash, first_name, last_name, phone, otp_code, otp_expires_at, email_verified)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                        RETURNING id
+                    ");
+                    $stmt->execute([
+                        $data['email'],
+                        $password_hash,
+                        $data['first_name'],
+                        $data['last_name'],
+                        $phone,
+                        $otp_code,
+                        $otp_expires,
+                        $shouldBypass ? true : false
+                    ]);
+                    $insertedUser = $stmt->fetch();
+                    $user_id = $insertedUser['id'] ?? null;
+                } else {
+                    $stmt = $this->pdo->prepare("
+                        INSERT INTO users (email, password_hash, first_name, last_name, phone, otp_code, otp_expires_at, email_verified)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    ");
+                    $stmt->execute([
+                        $data['email'],
+                        $password_hash,
+                        $data['first_name'],
+                        $data['last_name'],
+                        $phone,
+                        $otp_code,
+                        $otp_expires,
+                        $shouldBypass ? true : false
+                    ]);
+                    $user_id = $this->pdo->lastInsertId();
+                }
 
-            $user_id = $this->pdo->lastInsertId();
+                if (!$user_id) {
+                    sendError('Failed to create user record', 500);
+                }
 
             if ($shouldBypass) {
                 $markVerified = $this->pdo->prepare("UPDATE users SET email_verified_at = NOW() WHERE id = ?");
@@ -112,14 +136,27 @@ class UserController {
                 'last_name' => $data['last_name']
             ]);
 
+            $token = bin2hex(random_bytes(32));
+
+            if (session_status() === PHP_SESSION_NONE) {
+                session_start();
+            }
+            $_SESSION['user_id'] = $user_id;
+            $_SESSION['email'] = $data['email'];
+            $_SESSION['token'] = $token;
+
+            $userStmt = $this->pdo->prepare("\n                SELECT id, email, first_name, last_name, role, is_active\n                FROM users\n                WHERE id = ?\n            ");
+            $userStmt->execute([$user_id]);
+            $createdUser = $userStmt->fetch();
+
             sendResponse([
                 'success' => true,
-                'message' => $shouldBypass
-                    ? 'User registered successfully. Email verification is temporarily disabled.'
-                    : 'User registered successfully. Please verify your email using the OTP code sent to your email address.',
+                'message' => 'User registered successfully.',
                 'user_id' => $user_id,
                 'email' => $data['email'],
-                'verification_required' => !$shouldBypass
+                'verification_required' => false,
+                'token' => $token,
+                'user' => $createdUser
             ], 201);
 
         } catch (PDOException $e) {

@@ -131,67 +131,26 @@ export const useAuthStore = defineStore('auth', () => {
       })
       logApiSuccess('register', response)
 
+      if (response.data.token && response.data.user) {
+        token.value = response.data.token
+        user.value = response.data.user
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+        setAuthHeader(response.data.token)
+      }
+
       return {
         success: true,
         message: response.data.message,
         userId: response.data.user_id,
         email: response.data.email,
+        token: response.data.token,
+        user: response.data.user,
         verificationRequired: response.data.verification_required !== false,
       }
     } catch (err) {
       logApiError('register', err)
       error.value = err.response?.data?.error || 'Registration failed'
-      throw error.value
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  // Verify email with OTP
-  const verifyEmail = async (email, otpCode) => {
-    isLoading.value = true
-    error.value = null
-    try {
-      const response = await postAuthEndpoint('verifyEmail', 'verify-email', 'verify-email', {
-        email,
-        otp_code: otpCode,
-      })
-      logApiSuccess('verifyEmail', response)
-
-      return {
-        success: true,
-        message: response.data.message,
-        userId: response.data.user_id,
-      }
-    } catch (err) {
-      logApiError('verifyEmail', err)
-      error.value = err.response?.data?.error || 'Email verification failed'
-      throw error.value
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  // Resend OTP
-  const resendOTP = async (email) => {
-    isLoading.value = true
-    error.value = null
-    try {
-      const response = await postAuthEndpoint(
-        'resendOTP',
-        'resend-verification',
-        'resend-otp',
-        { email },
-      )
-      logApiSuccess('resendOTP', response)
-
-      return {
-        success: true,
-        message: response.data.message,
-      }
-    } catch (err) {
-      logApiError('resendOTP', err)
-      error.value = err.response?.data?.error || 'Failed to resend OTP'
       throw error.value
     } finally {
       isLoading.value = false
@@ -317,8 +276,6 @@ export const useAuthStore = defineStore('auth', () => {
     isStaff,
     isCitizen,
     register,
-    verifyEmail,
-    resendOTP,
     login,
     logout,
     fetchUserProfile,

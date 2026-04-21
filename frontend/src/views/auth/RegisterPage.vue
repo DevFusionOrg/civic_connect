@@ -142,20 +142,6 @@
       <p class="text-danger text-sm">{{ error }}</p>
     </div>
 
-    <!-- hCaptcha -->
-    <div v-if="!isCaptchaBypassed" class="flex flex-col items-center">
-      <vue-hcaptcha
-        :sitekey="hcaptchaSitekey"
-        @verify="onCaptchaVerify"
-        @error="onCaptchaError"
-        @expired="onCaptchaExpired"
-      ></vue-hcaptcha>
-      <p v-if="errors.captcha" class="text-danger mt-1 text-sm">{{ errors.captcha }}</p>
-    </div>
-    <div v-else class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-center text-sm text-amber-800">
-      Captcha is bypassed for localhost/development.
-    </div>
-
     <!-- Submit Button -->
     <button
       type="submit"
@@ -183,7 +169,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
 import { useToast } from 'vue-toastification'
-import VueHcaptcha from '@hcaptcha/vue3-hcaptcha'
 import logo from '@/assets/civic-connect-logo.png'
 
 const router = useRouter()
@@ -207,19 +192,10 @@ const errors = ref({
   password: '',
   confirmPassword: '',
   terms: '',
-  captcha: '',
 })
 
 const error = ref('')
 const isLoading = ref(false)
-const captchaToken = ref('')
-const hcaptchaSitekey = import.meta.env.VITE_HCAPTCHA_SITEKEY
-const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-const isCaptchaBypassed = import.meta.env.DEV || isLocalhost
-
-if (isCaptchaBypassed) {
-  captchaToken.value = 'local-dev-bypass'
-}
 
 const validateField = (field) => {
   errors.value[field] = ''
@@ -271,25 +247,9 @@ const validateField = (field) => {
   }
 }
 
-const onCaptchaVerify = (token) => {
-  captchaToken.value = token
-  errors.value.captcha = ''
-}
-
-const onCaptchaError = () => {
-  errors.value.captcha = 'Captcha verification failed. Please try again.'
-  captchaToken.value = ''
-}
-
-const onCaptchaExpired = () => {
-  errors.value.captcha = 'Captcha expired. Please verify again.'
-  captchaToken.value = ''
-}
-
 const handleRegister = async () => {
   error.value = ''
   errors.value.terms = ''
-  errors.value.captcha = ''
 
   // Validate all fields
   validateField('firstName')
@@ -302,11 +262,6 @@ const handleRegister = async () => {
     errors.value.terms = 'You must accept the terms and conditions'
   }
 
-  // Validate captcha
-  if (!isCaptchaBypassed && !captchaToken.value) {
-    errors.value.captcha = 'Please complete the captcha verification'
-  }
-
   if (
     errors.value.firstName ||
     errors.value.lastName ||
@@ -314,7 +269,6 @@ const handleRegister = async () => {
     errors.value.password ||
     errors.value.confirmPassword ||
     errors.value.terms ||
-    errors.value.captcha
   ) {
     return
   }
@@ -331,17 +285,15 @@ const handleRegister = async () => {
     })
 
     if (response.success) {
-      if (response.verificationRequired) {
-        toast.success('Account created! Please verify your email.')
+      toast.success('Account created! You are now signed in.')
 
-        // Store email for verification page
-        sessionStorage.setItem('registeredEmail', response.email)
+      const redirectPath = authStore.isAdmin
+        ? '/admin/dashboard'
+        : authStore.isStaff
+          ? '/staff/dashboard'
+          : '/dashboard'
 
-        router.push('/verify-email')
-      } else {
-        toast.success('Account created! You can now login.')
-        router.push('/login')
-      }
+      router.push(redirectPath)
     }
   } catch (err) {
     error.value = err || 'Registration failed. Please try again.'
