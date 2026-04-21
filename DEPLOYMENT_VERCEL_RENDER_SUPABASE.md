@@ -83,6 +83,11 @@ Notes:
 - Ensure `FRONTEND_URL` and `CORS_ALLOWED_ORIGINS` include your Vercel domain.
 - If using preview deployments, include `https://*.vercel.app`.
 
+2. Preflight `OPTIONS` returns 404:
+- This usually means Apache rewrite rules are not active in the backend container.
+- Ensure backend is deployed from the current Dockerfile (with `AllowOverride All` and `mod_rewrite` enabled), then redeploy Render.
+- After redeploy, `OPTIONS https://your-backend.onrender.com/api/auth/register` should return 204/200 with CORS headers.
+
 2. 401 on admin pages:
 - Ensure login token exists and backend receives `Authorization: Bearer <token>`.
 

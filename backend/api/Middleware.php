@@ -149,6 +149,7 @@ class Middleware {
         $defaultOrigins = [
             $_ENV['FRONTEND_URL'] ?? '',
             $_ENV['APP_URL'] ?? '',
+            'https://*.vercel.app',
             'http://localhost:5173',
             'http://localhost:5174',
             'http://localhost:5175',
@@ -179,12 +180,12 @@ class Middleware {
         }
         
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
         header('Access-Control-Allow-Credentials: true');
         header('Access-Control-Max-Age: 3600');
 
         if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-            http_response_code(200);
+            http_response_code(204);
             exit;
         }
     }
