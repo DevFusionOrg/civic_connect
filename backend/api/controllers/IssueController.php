@@ -49,7 +49,7 @@ class IssueController {
         $confidence = (float)($ai_result['confidence'] ?? 0);
         $annotated_image_url = null;
         if (!empty($ai_result['annotated_image_path'])) {
-            $annotated_image_url = 'http://localhost/civic-connect/backend/' . $ai_result['annotated_image_path'];
+            $annotated_image_url = buildPublicAssetUrl($ai_result['annotated_image_path']);
         }
 
         sendResponse([
@@ -286,7 +286,7 @@ class IssueController {
 
             // Add image_url from image_path
             if (!empty($issue['image_path'])) {
-                $issue['image_url'] = 'http://localhost/civic-connect/backend/' . $issue['image_path'];
+                $issue['image_url'] = buildPublicAssetUrl($issue['image_path']);
             } else {
                 $issue['image_url'] = null;
             }
@@ -468,7 +468,7 @@ class IssueController {
             foreach ($issues as &$issue) {
                 // Add image_url
                 if (!empty($issue['image_path'])) {
-                    $issue['image_url'] = 'http://localhost/civic-connect/backend/' . $issue['image_path'];
+                    $issue['image_url'] = buildPublicAssetUrl($issue['image_path']);
                 } else {
                     $issue['image_url'] = null;
                 }
@@ -817,7 +817,7 @@ class IssueController {
             // Add image URLs and cast types
             foreach ($issues as &$issue) {
                 if (!empty($issue['image_path'])) {
-                    $issue['image_url'] = 'http://localhost/civic-connect/backend/' . $issue['image_path'];
+                    $issue['image_url'] = buildPublicAssetUrl($issue['image_path']);
                 } else {
                     $issue['image_url'] = null;
                 }

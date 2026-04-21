@@ -70,13 +70,23 @@ if (isset($_GET['route']) && !empty($_GET['route'])) {
 } else {
     // Method 2 & 3: Parse REQUEST_URI directly
     $full_uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-    $base_path = '/civic-connect/backend/api';
+    $configuredBasePath = trim($_ENV['API_BASE_PATH'] ?? '/api');
+    if ($configuredBasePath !== '' && $configuredBasePath[0] !== '/') {
+        $configuredBasePath = '/' . $configuredBasePath;
+    }
+    $candidateBasePaths = array_values(array_unique(array_filter([
+        $configuredBasePath,
+        '/civic-connect/backend/api',
+        '/api',
+    ])));
     
     // Remove the base path to get the route
-    if (strpos($full_uri, $base_path) === 0) {
-        $request_uri = substr($full_uri, strlen($base_path));
-    } else {
-        $request_uri = $full_uri;
+    $request_uri = $full_uri;
+    foreach ($candidateBasePaths as $base_path) {
+        if (strpos($full_uri, $base_path) === 0) {
+            $request_uri = substr($full_uri, strlen($base_path));
+            break;
+        }
     }
 
     // Also support deployment from the service root or /api prefix

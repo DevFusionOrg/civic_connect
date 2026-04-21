@@ -5,6 +5,38 @@
 
 require_once __DIR__ . '/../config/bootstrap.php';
 
+/**
+ * Get the public backend base URL used for absolute asset links.
+ */
+function getBackendBaseUrl() {
+    return rtrim($_ENV['BACKEND_PUBLIC_URL'] ?? '', '/');
+}
+
+/**
+ * Get the public frontend app URL used in email links.
+ */
+function getFrontendBaseUrl() {
+    $frontendUrl = $_ENV['FRONTEND_URL'] ?? $_ENV['APP_URL'] ?? '';
+    return rtrim($frontendUrl, '/');
+}
+
+/**
+ * Build a public URL for a backend-relative asset path.
+ */
+function buildPublicAssetUrl($relativePath) {
+    $cleanPath = ltrim((string)$relativePath, '/');
+    if ($cleanPath === '') {
+        return null;
+    }
+
+    $backendBaseUrl = getBackendBaseUrl();
+    if ($backendBaseUrl === '') {
+        return '/' . $cleanPath;
+    }
+
+    return $backendBaseUrl . '/' . $cleanPath;
+}
+
 
 
 /**
@@ -309,7 +341,7 @@ function sendStatusChangeEmail($to_email, $to_name, $issue_data, $old_status, $n
             
             <p>You can view the full details of your issue by logging into your account.</p>
             <p style='margin-top: 30px;'>
-                <a href='http://localhost:5173/issues/{$issue_data['id']}' 
+                <a href='" . getFrontendBaseUrl() . "/issues/{$issue_data['id']}' 
                    style='background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;'>
                     View Issue Details
                 </a>

@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
-
-const API_BASE_URL = 'http://localhost/civic-connect/backend/api'
+import { API_BASE_URL } from '@/config/api'
 
 export const useIssuesStore = defineStore('issues', () => {
   const issues = ref([])

@@ -37,7 +37,8 @@ CivicConnect is a web-based platform that allows citizens to report city issues 
 
 ### **Database**
 
-* MySQL
+* MySQL (local development)
+* PostgreSQL / Supabase (cloud deployment)
 
 ### **Storage**
 
@@ -137,12 +138,16 @@ git remote add upstream https://github.com/EbadShelby/civic-connect.git
 
 ### **2. Database Setup**
 
-1.  Create a MySQL database named `civic_connect`.
-2.  Import the schema:
+1.  Create a MySQL database named `civic_connect` for local setup.
+2.  Import the local schema:
     ```sql
     source database.sql;
     ```
-3.  **Create Admin Account**:
+3.  For Supabase/PostgreSQL cloud setup, use:
+    ```sql
+    source database_postgres.sql;
+    ```
+4.  **Create Admin Account**:
     Register a new user via the frontend (register page), then run the migration script to promote them to admin:
     ```bash
     php migrate_admin.php
@@ -192,7 +197,8 @@ civic-connect/
 │  ├─ uploads/              # Stored images
 │  └─ composer.json
 │
-├─ database.sql             # SQL Schema
+├─ database.sql             # MySQL schema (local)
+├─ database_postgres.sql    # PostgreSQL schema (Supabase)
 ├─ migrate_admin.php        # Utility to create admin
 └─ README.md
 ```
@@ -202,6 +208,14 @@ civic-connect/
 ## **License**
 
 **MIT License** — free to use, modify, and distribute for academic or personal projects.
+
+---
+
+## **Cloud Deployment (Vercel + Render + Supabase)**
+
+For full cloud deployment without local server dependencies, follow:
+
+`DEPLOYMENT_VERCEL_RENDER_SUPABASE.md`
 
 ---
 

@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
-
-const API_BASE_URL = 'http://localhost/civic-connect/backend/api'
+import { API_BASE_URL, getAuthHeaders } from '@/config/api'
 
 export const useNotificationsStore = defineStore('notifications', {
   state: () => ({
@@ -13,8 +12,7 @@ export const useNotificationsStore = defineStore('notifications', {
 
   actions: {
     getAuthHeaders() {
-      const token = localStorage.getItem('token')
-      return token ? { Authorization: `Bearer ${token}` } : {}
+      return getAuthHeaders()
     },
 
     async fetchNotifications(unreadOnly = false) {

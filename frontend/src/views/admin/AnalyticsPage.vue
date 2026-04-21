@@ -177,6 +177,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useIssuesStore } from '../../stores/issuesStore'
 import axios from 'axios'
+import { API_BASE_URL, getAuthHeaders } from '../../config/api'
 import {
   ClipboardDocumentListIcon,
   ArrowPathIcon,
@@ -564,11 +565,8 @@ const lineOptions = {
 
 const fetchAdminStats = async () => {
   try {
-    const token = localStorage.getItem('token')
-    const response = await axios.get('http://localhost/civic-connect/backend/api/admin/stats', {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const response = await axios.get(`${API_BASE_URL}/admin/stats`, {
+      headers: getAuthHeaders(),
     })
     if (response.data.success) {
       stats.value = response.data.stats

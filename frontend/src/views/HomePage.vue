@@ -234,9 +234,8 @@
 import { ref, onMounted, computed } from 'vue'
 import axios from 'axios'
 import { useAuthStore } from '@/stores/authStore'
+import { API_BASE_URL } from '@/config/api'
 import { MapPinIcon, UserGroupIcon, ChartBarIcon } from '@heroicons/vue/24/outline'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost/civic-connect/backend/api'
 const authStore = useAuthStore()
 
 const stats = ref({
@@ -254,7 +253,7 @@ const dashboardRoute = computed(() => {
 
 const fetchStats = async () => {
   try {
-    const response = await axios.get(`${API_URL}/stats.php`, {
+    const response = await axios.get(`${API_BASE_URL}/stats.php`, {
       withCredentials: false,
     })
     if (response.data.success) {

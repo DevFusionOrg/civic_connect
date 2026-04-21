@@ -131,6 +131,7 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '../../stores/authStore'
+import { API_BASE_URL } from '../../config/api'
 import { PhoneIcon, MapPinIcon, CalendarIcon } from '@heroicons/vue/24/solid'
 import axios from 'axios'
 
@@ -184,9 +185,7 @@ const fetchUserProfile = async () => {
   profileError.value = ''
 
   try {
-    const response = await axios.get(
-      `http://localhost/civic-connect/backend/api/users/${profileUserId.value}`,
-    )
+    const response = await axios.get(`${API_BASE_URL}/users/${profileUserId.value}`)
 
     if (response.data.success && response.data.user) {
       profileUser.value = response.data.user
@@ -207,7 +206,7 @@ const fetchUserStats = async () => {
   try {
     const token = localStorage.getItem('token')
     const response = await axios.get(
-      `http://localhost/civic-connect/backend/api/users/${profileUserId.value}/stats`,
+      `${API_BASE_URL}/users/${profileUserId.value}/stats`,
       {
         headers: {
           Authorization: `Bearer ${token}`,

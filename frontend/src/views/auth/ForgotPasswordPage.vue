@@ -138,11 +138,10 @@ import { useRouter } from 'vue-router'
 import { useToast } from 'vue-toastification'
 import axios from 'axios'
 import { KeyIcon } from '@heroicons/vue/24/outline'
+import { API_BASE_URL } from '@/config/api'
 
 const router = useRouter()
 const toast = useToast()
-
-const API_BASE_URL = 'http://localhost/civic-connect/backend/api'
 
 const postAuthEndpoint = async (authPath, usersPath, payload) => {
   try {

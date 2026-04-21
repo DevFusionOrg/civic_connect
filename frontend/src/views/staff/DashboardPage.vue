@@ -333,6 +333,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useIssuesStore } from '../../stores/issuesStore'
 import { useAuthStore } from '../../stores/authStore'
+import { API_BASE_URL } from '../../config/api'
 import {
   ClipboardDocumentListIcon,
   ExclamationCircleIcon,
@@ -498,7 +499,7 @@ const loadAssignedIssues = async () => {
   isLoading.value = true
   try {
     const response = await fetch(
-      `http://localhost/civic-connect/backend/api/issues?assigned_to_me=true&limit=100`,
+      `${API_BASE_URL}/issues?assigned_to_me=true&limit=100`,
       {
         headers: {
           'Authorization': `Bearer ${authStore.token}`

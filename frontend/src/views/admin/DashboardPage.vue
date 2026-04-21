@@ -253,6 +253,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { API_BASE_URL, getAuthHeaders } from '@/config/api'
 import {
   UserGroupIcon,
   ExclamationTriangleIcon,
@@ -277,7 +278,9 @@ const error = ref(null)
 const fetchStats = async () => {
   loading.value = true
   try {
-    const response = await axios.get('http://localhost/civic-connect/backend/api/admin/stats')
+    const response = await axios.get(`${API_BASE_URL}/admin/stats`, {
+      headers: getAuthHeaders(),
+    })
     if (response.data.success) {
       stats.value = response.data.stats
     }

@@ -325,6 +325,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { API_BASE_URL, getAuthHeaders } from '../../config/api'
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -367,11 +368,12 @@ const formData = ref({
 const fetchStaff = async (page = 1) => {
   loading.value = true
   try {
-    const response = await axios.get('http://localhost/civic-connect/backend/api/admin/staff', {
+    const response = await axios.get(`${API_BASE_URL}/admin/staff`, {
       params: {
         page,
         search: searchQuery.value,
       },
+      headers: getAuthHeaders(),
     })
 
     if (response.data.success) {
@@ -444,11 +446,14 @@ const saveStaff = async () => {
     if (isEditing.value) {
       // Update existing staff
       await axios.put(
-        `http://localhost/civic-connect/backend/api/admin/staff/${editingStaff.value.id}`,
+        `${API_BASE_URL}/admin/staff/${editingStaff.value.id}`,
         {
           first_name: formData.value.first_name,
           last_name: formData.value.last_name,
           email: formData.value.email,
+        },
+        {
+          headers: getAuthHeaders(),
         },
       )
 
@@ -461,7 +466,9 @@ const saveStaff = async () => {
       }
     } else {
       // Create new staff
-      await axios.post('http://localhost/civic-connect/backend/api/admin/staff', formData.value)
+      await axios.post(`${API_BASE_URL}/admin/staff`, formData.value, {
+        headers: getAuthHeaders(),
+      })
 
       // Refresh list
       await fetchStaff(pagination.value.current_page)
@@ -491,7 +498,11 @@ const toggleStatus = async (member) => {
 
   try {
     const response = await axios.put(
-      `http://localhost/civic-connect/backend/api/admin/staff/${member.id}/status`,
+      `${API_BASE_URL}/admin/staff/${member.id}/status`,
+      {},
+      {
+        headers: getAuthHeaders(),
+      },
     )
 
     if (response.data.success) {

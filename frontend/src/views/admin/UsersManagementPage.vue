@@ -266,6 +266,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { API_BASE_URL, getAuthHeaders } from '../../config/api'
 import { MagnifyingGlassIcon, ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 
 // Simple debounce implementation
@@ -294,11 +295,12 @@ const saving = ref(false)
 const fetchUsers = async (page = 1) => {
   loading.value = true
   try {
-    const response = await axios.get('http://localhost/civic-connect/backend/api/admin/users', {
+    const response = await axios.get(`${API_BASE_URL}/admin/users`, {
       params: {
         page,
         search: searchQuery.value,
       },
+      headers: getAuthHeaders(),
     })
 
     if (response.data.success) {
@@ -348,9 +350,12 @@ const saveRole = async () => {
   saving.value = true
   try {
     await axios.put(
-      `http://localhost/civic-connect/backend/api/admin/users/${editingUser.value.id}/role`,
+      `${API_BASE_URL}/admin/users/${editingUser.value.id}/role`,
       {
         role: selectedRole.value,
+      },
+      {
+        headers: getAuthHeaders(),
       },
     )
 

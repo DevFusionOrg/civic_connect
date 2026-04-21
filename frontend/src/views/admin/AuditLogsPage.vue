@@ -162,6 +162,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
+import { API_BASE_URL, getAuthHeaders } from '../../config/api'
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/vue/24/outline'
 
 const logs = ref([])
@@ -177,9 +178,10 @@ const fetchLogs = async (page = 1) => {
   loading.value = true
   try {
     const response = await axios.get(
-      'http://localhost/civic-connect/backend/api/admin/audit-logs',
+      `${API_BASE_URL}/admin/audit-logs`,
       {
         params: { page },
+        headers: getAuthHeaders(),
       },
     )
 

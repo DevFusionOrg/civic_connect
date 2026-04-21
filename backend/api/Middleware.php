@@ -7,6 +7,23 @@ require_once __DIR__ . '/../config/database.php';
 
 class Middleware {
     /**
+     * Check whether an origin matches an allowlist pattern.
+     */
+    private static function originMatchesPattern($origin, $pattern) {
+        if ($origin === $pattern) {
+            return true;
+        }
+
+        if (strpos($pattern, '*') === false) {
+            return false;
+        }
+
+        $escaped = preg_quote($pattern, '#');
+        $regex = '#^' . str_replace('\\*', '.*', $escaped) . '$#';
+        return (bool)preg_match($regex, $origin);
+    }
+
+    /**
      * Check if user is authenticated via token
      * 
      * @return array|null User data if authenticated, null otherwise
@@ -128,26 +145,37 @@ class Middleware {
      * CORS headers for cross-origin requests
      */
     public static function setCORSHeaders() {
-        $allowed_origins = [
-            $_ENV['APP_URL'] ?? 'http://localhost/civic-connect',
-            'http://localhost:5173',  // Vite dev server default
-            'http://localhost:5174',  // Vite dev server alternative
-            'http://localhost:5175',  // Vite dev server alternative 2
-            'http://localhost:5176',  // Vite dev server alternative 3
-            'http://localhost:3000',  // Common dev server port
+        $configuredOrigins = array_filter(array_map('trim', explode(',', $_ENV['CORS_ALLOWED_ORIGINS'] ?? '')));
+        $defaultOrigins = [
+            $_ENV['FRONTEND_URL'] ?? '',
+            $_ENV['APP_URL'] ?? '',
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:5175',
+            'http://localhost:5176',
+            'http://localhost:3000',
             'http://127.0.0.1:5173',
             'http://127.0.0.1:5174',
-            'http://127.0.0.1:3000'
+            'http://127.0.0.1:3000',
         ];
+        $allowed_origins = array_values(array_unique(array_filter(array_merge($configuredOrigins, $defaultOrigins))));
         
         $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $matchedOrigin = '';
         
-        // Check if origin is in allowed list
-        if (in_array($origin, $allowed_origins)) {
-            header('Access-Control-Allow-Origin: ' . $origin);
-        } else {
-            // Fallback to APP_URL for production
-            header('Access-Control-Allow-Origin: ' . ($_ENV['APP_URL'] ?? 'http://localhost/civic-connect'));
+        foreach ($allowed_origins as $allowedOrigin) {
+            if (self::originMatchesPattern($origin, $allowedOrigin)) {
+                $matchedOrigin = $origin;
+                break;
+            }
+        }
+
+        if ($matchedOrigin !== '') {
+            header('Access-Control-Allow-Origin: ' . $matchedOrigin);
+            header('Vary: Origin');
+        } elseif (!empty($allowed_origins)) {
+            // Set deterministic fallback for non-browser/server requests.
+            header('Access-Control-Allow-Origin: ' . $allowed_origins[0]);
         }
         
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');

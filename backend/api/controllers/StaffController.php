@@ -365,7 +365,7 @@ class StaffController {
                                         Your account is ready to use! You can log in immediately using the credentials provided to you by your administrator.
                                     </p>
                                     <div style='text-align: center; margin: 30px 0;'>
-                                        <a href='http://localhost/civic-connect' style='display: inline-block; background-color: #667eea; color: #ffffff; font-size: 16px; font-weight: bold; padding: 15px 30px; border-radius: 8px; text-decoration: none;'>Login to Your Account</a>
+                                        <a href='" . getFrontendBaseUrl() . "' style='display: inline-block; background-color: #667eea; color: #ffffff; font-size: 16px; font-weight: bold; padding: 15px 30px; border-radius: 8px; text-decoration: none;'>Login to Your Account</a>
                                     </div>
                                     <p style='margin: 30px 0 0; font-size: 14px; line-height: 20px; color: #666666; text-align: center;'>
                                         If you have any questions, please contact your administrator.
